@@ -100,7 +100,7 @@ pipeline {
 and it uses SSH to deploy the JAR to the appropriate EC2s. This approach scales easily to multiple regions and environments, supports consistent deployments, 
 and separates infrastructure logic from CI/CD logic."
 
-if your Jenkins build failed with the resource constrains how can you debug that issue and how can you diagnose that?
+2. if your Jenkins build failed with the resource constrains how can you debug that issue and how can you diagnose that?
 ✅ 2. Step 2: Check Jenkins Agent/Node Health
 Navigate to Jenkins Dashboard → Manage Jenkins → Nodes.
 Select the node where the build ran and check:
@@ -168,5 +168,92 @@ I clean up Docker artifacts, old build logs, and workspace data. If it's a frequ
 integrate alerts via CloudWatch or Prometheus, and scale Jenkins agents dynamically using auto-scaling groups or Kubernetes pods. 
 I also use cleanWs() and retry blocks in pipelines to make them more resilient.”
 
+3. if your Jenkins build failed with the resource constrains how can you debug that issue and how can you diagnose that?
+✅ Step-by-Step Troubleshooting Guide
+1. 🔍 Check ALB Target Health
+Go to EC2 > Load Balancers > Your ALB > Target Groups
+Check target health status:
+Is it healthy or unhealthy?
+Hover over the status to see why it's unhealthy.
+🔧 Common issues:
+Wrong port configured (e.g., your app runs on 8080 but ALB checks 80)
+App not responding to health checks
+App crashed or not started properly
 
+2. 📜 Check ALB Access Logs
+Enable access logs on the ALB
+Look for 502 error codes
+You’ll see which IP and path caused the issue
+
+3. 🧪 Check Application Logs on Target EC2 / ECS / Lambda
+SSH into the EC2 or check logs from CloudWatch or ECS logs:
+Is the app running?
+Does the app crash or throw errors?
+Is the server (like Nginx/Tomcat) responding?
+
+4. 🔧 Check Security Group and Network ACLs
+Make sure:
+ALB security group allows traffic to target EC2's port
+EC2 security group allows traffic from ALB
+No NACL is blocking the request
+
+5. 🧠 Verify Listener & Target Group Configuration
+ALB listener (say, HTTP:80 or HTTPS:443) forwards to correct Target Group
+Target Group protocol and port match the app’s actual port
+
+6. 🌐 Test the Application Manually
+SSH into the EC2 and run:
+curl http://localhost:8080
+
+Or from another EC2 in same VPC:
+curl http://<Target EC2 Private IP>:8080
+✅ If this fails, your app is not running or has a config issue
+
+7. 🔒 Check TLS/SSL (if HTTPS used)
+If you're using HTTPS, make sure:
+SSL cert is valid
+App supports HTTPS if you terminate TLS at the instance level
+
+🛠️ Final Checklist for Interview Answer:
+“First, I check ALB target group health to confirm if targets are healthy. If they’re not, I SSH into the instance and check application logs and whether the app is responding 
+on the correct port. I also verify that security groups, listener rules, and target ports are correctly set. 
+If needed, I enable ALB access logs and CloudWatch metrics for deeper visibility. For HTTPS issues, I ensure SSL certs and protocols are configured properly.”
+
+4. what is the difference between terraform and cloudformation why do we need to go with the terraform?
+   “While CloudFormation is a native AWS service, we prefer Terraform because of its modular design, support for multiple cloud providers, 
+   and the powerful plan feature that clearly shows the impact of changes. It also offers better reusability, faster iteration, and a larger community-driven ecosystem.”
+   Tons of open-source modules, GitHub templates, and plugins — faster development & onboarding.
+
+   “CloudFormation is great for AWS-native teams, but it has several limitations like verbosity, lack of multi-cloud support, limited modularity, 
+    and slower adoption of new AWS features. Terraform gives us more flexibility, better code structure, and faster iteration with plan, apply, and reusable modules.”
+
+5.what is stopping the instance and hibernating the instance?
+  ✅ 1. Stopping an EC2 Instance
+When you stop an EC2 instance:
+The OS is shut down gracefully.
+The instance store data is lost (if using ephemeral storage).
+The EBS root volume is preserved.
+The RAM content is cleared (i.e., memory state is not preserved).
+No instance-hour charges apply while stopped (but EBS charges remain).
+The public IP changes if it’s not an Elastic IP.
+Instance can be restarted later — boots from scratch.
+
+Interview explanation:
+“When we stop an instance, the memory state is lost, and it boots as a fresh machine next time. It's ideal for temporarily deallocating resources without deleting them.”
+
+✅ 2. Hibernating an EC2 Instance
+When you hibernate an instance:
+The OS is paused, not shut down.
+The contents of RAM are saved to the EBS volume.
+On restart, it resumes from the exact state it was paused in — apps, sessions, cache, etc. remain intact.
+The EBS cost increases because it stores RAM snapshot.
+Hibernation must be enabled when you launch the instance.
+Only supported on:
+Amazon Linux, Ubuntu, Windows
+Certain instance types (like t2, t3, m5)
+Instances with less than 150 GB of RAM
+
+Interview explanation:
+“Hibernation is useful when we want to pause workloads and resume them quickly without restarting apps or reinitializing memory-heavy processes — for example,
+long-running simulations or in-memory caches.”
 
