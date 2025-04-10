@@ -257,3 +257,132 @@ Interview explanation:
 “Hibernation is useful when we want to pause workloads and resume them quickly without restarting apps or reinitializing memory-heavy processes — for example,
 long-running simulations or in-memory caches.”
 
+6. Suppose I created an EC2 instance with the public IP so If i attach an EIP what will happen to the public IP?
+   🔥 So, what happens to the original public IP?
+👉 The auto-assigned public IP gets released immediately.
+👉 Your instance now uses the Elastic IP (EIP) as its public IP address.
+
+🧠 Why?
+Because:
+Auto-assigned public IPs are dynamic – they change on stop/start.
+Elastic IPs are static – they stay with your account until you release them.
+You can’t have two public IPs on the same network interface (by default).
+Attaching an EIP replaces the auto-assigned public IP.
+
+✅ Example for Interview:
+“When an EC2 instance is launched with an auto-assigned public IP and later an Elastic IP is attached, 
+ the original public IP is released immediately. The instance now communicates via the Elastic IP. 
+ This is useful when we need a persistent public IP that doesn’t change across reboots or stops.”
+
+7. "If everything seems correctly configured for your S3 bucket, but you're still unable to access it, 
+    what could be the possible reasons and how would you troubleshoot?
+
+1. Check Block Public Access Settings
+Even if your bucket policy or object ACL allows public access, these settings override them.
+Go to S3 → Bucket → Permissions → Block Public Access
+Ensure block all public access is unchecked if you intend to allow public access.
+
+2. Validate the Bucket Policy
+Ensure the bucket policy is not too restrictive.
+🔍 Example: To allow public read:
+  {
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": "*",
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::your-bucket-name/*"
+  }]
+}
+
+3. IAM Role or User Policy Permissions
+If you're using AWS CLI or SDK, make sure the IAM role/user has the right permissions.
+✅ Minimum required for access:
+{
+  "Effect": "Allow",
+  "Action": [
+    "s3:GetObject",
+    "s3:ListBucket"
+  ],
+  "Resource": [
+    "arn:aws:s3:::your-bucket-name",
+    "arn:aws:s3:::your-bucket-name/*"
+  ]
+}
+
+4. S3 VPC Endpoint Restrictions
+If your S3 access is through a VPC endpoint, check:
+The endpoint policy might be denying access.
+Bucket policy might allow access only from specific VPCs/VPC endpoint IDs.
+📌 Bucket policy example restricting to VPC endpoint:
+"Condition": {
+  "StringEquals": {
+    "aws:sourceVpce": "vpce-1234567890abcdef0"
+  }
+}
+
+8. what is the difference between declarative and imperative pipeline??
+   imperative uses groovy script and it started with node
+   Declarative pipeline also built in groovy but it uses DSL
+   Declarative starts with pipeline and groovy starts with node
+   Declarative will be having Restart from stage and groovy doesn't have.
+
+9. what is connection draining in load balancers and how to do that?
+   Imagine you're deploying a new version of your application. If you terminate an instance immediately, active users connected to that instance will lose their session or get errors.
+   With Connection Draining:
+   The instance stops receiving new requests.
+   It continues to serve existing users until they complete or until a timeout is reached.
+   Wait up to 300 seconds (5 minutes) for those users to finish.
+   After that time, forcefully closes any remaining connections.
+
+   🔧 How to Enable Connection Draining (Deregistration Delay) in AWS:
+   ✅ For Application Load Balancer (ALB) or Network Load Balancer (NLB):
+   You configure this on the Target Group.
+
+   🛠 Steps in Console:
+   Go to EC2 Console > Target Groups.
+   Select your target group.
+   Click "Attributes" tab.
+   Edit Deregistration Delay (Default: 300 seconds, i.e. 5 minutes).
+
+   💡 Why this matters:
+   Let’s say your app has:
+   Long-running connections (e.g., file uploads, payments, video streaming)
+   You terminate the instance without draining: users will get 502/504 errors.
+   With Connection Draining, AWS waits to avoid cutting off active users.
+
+   10. what are the plugins you installed in Kubernetes??
+   Monitoring tools are deployed as pods in Kubernetes because everything in Kubernetes runs in containers. 
+   Tools like Prometheus and Grafana are containerized and managed just like app workloads. 
+   We install them as add-ons because Kubernetes by default is minimal—it provides orchestration but doesn’t include logging, 
+   monitoring, or ingress capabilities, so we install the needed plugins depending on the use case
+
+   ✅ 1. Install Calico (CNI Plugin)
+Calico is used for network policies and pod networking.
+
+📦 Apply Calico manifest (for kubeadm-based clusters):
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/calico.yaml
+
+✅ 2. Install Prometheus & Grafana (Monitoring Tools)
+You can install them using Helm (recommended way).
+
+🛠 Step 1: Add the Helm repo
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+🧭 Step 2: Install Prometheus
+ helm install prometheus prometheus-community/prometheus
+
+ 📊 Step 3: Install Grafana
+  helm install grafana grafana/grafana --set adminPassword='admin123'
+
+  You can access Grafana via:
+   kubectl get svc --namespace default -l "app.kubernetes.io/name=grafana"
+
+  ✅ 3. Install NGINX Ingress Controller
+  This is used to expose your apps to the outside world via HTTP/HTTPS.
+
+📦 Apply NGINX ingress controller:
+ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.0/deploy/static/provider/cloud/deploy.yaml
+
