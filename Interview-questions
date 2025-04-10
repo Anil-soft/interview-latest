@@ -386,3 +386,42 @@ helm repo update
 📦 Apply NGINX ingress controller:
  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.0/deploy/static/provider/cloud/deploy.yaml
 
+10. How can you import the modules in Lambda function which are not available in AWS like pandas, numpy, matplotlib?
+✅ Step-by-Step to Use Custom Libraries in Lambda
+📦 Step 1: Set Up Your Working Directory
+Create a project folder:
+mkdir my_lambda_function
+cd my_lambda_function
+
+Create your Lambda function file (e.g., lambda_function.py):
+import pandas as pd
+
+def lambda_handler(event, context):
+    data = {"Name": ["Anil", "John"], "Age": [28, 30]}
+    df = pd.DataFrame(data)
+    return df.to_json()
+
+📥 Step 2: Install Dependencies Locally
+Install the required libraries into a subfolder called python:
+
+✅ Note: Use Amazon Linux 2 or a Docker image to ensure compatibility with the Lambda environment.
+pip install pandas -t python/
+
+🗜️ Step 3: Zip the Package
+Move into the python directory and zip everything:
+cd python
+zip -r ../lambda_package.zip .
+
+Add your Lambda function code to the zip:
+cd ..
+zip -g lambda_package.zip lambda_function.py
+
+☁️ Step 4: Upload to AWS Lambda
+You have two options:
+
+Option A: Upload using AWS Console
+Go to AWS Lambda → Your function → Upload zip file
+
+
+
+
