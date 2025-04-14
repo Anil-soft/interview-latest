@@ -422,6 +422,97 @@ You have two options:
 Option A: Upload using AWS Console
 Go to AWS Lambda → Your function → Upload zip file
 
+11. how can you store the secrets in Kubernetes, suppose if you push secrets.yaml the secrets can be visible 
+in repo and how can you encrypt them??
 
+✅ Secure Solution 1: Bitnami Sealed Secrets
+🔒 What is Sealed Secrets?
+It’s a controller + CLI tool that encrypts secrets so you can safely store them in Git.
+You create a secret as usual.
+You encrypt it using the cluster's public key.
+Only the cluster (with the private key) can decrypt it.
+🔧 Setup Steps:
+🔹 Step 1: Install Sealed Secrets in Your Cluster
 
+kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.1/controller.yaml
 
+This installs the controller that will decrypt the secrets at runtime.
+
+🔹 Step 2: Install the kubeseal CLI
+On your local machine:
+brew install kubeseal           # For Mac
+sudo apt install kubeseal       # For Ubuntu/Debian
+
+🔹 Step 3: Create a normal secret file (not apply yet)
+   kubectl create secret generic my-secret \
+  --from-literal=username=admin \
+  --from-literal=password=123456 \
+  --dry-run=client -o yaml > my-secret.yaml
+
+This is a local file, not pushed to the cluster.
+🔹 Step 4: Encrypt it using kubeseal
+kubeseal --controller-name=sealed-secrets \
+         --controller-namespace=kube-system \
+         < my-secret.yaml \
+         --format yaml > my-sealed-secret.yaml
+This creates my-sealed-secret.yaml — it looks like this:
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: my-secret
+  namespace: default
+spec:
+  encryptedData:
+    username: AgB3H9k...
+    password: Ax98sK...
+
+You can now safely push this to GitHub — it's fully encrypted.
+kubectl apply -f my-sealed-secret.yaml
+The controller will decrypt it inside the cluster and create a normal secret.
+
+12. I have 3 azs and 3 nodes on each az suppose if I want to deploy a pod and each node in each az how can you do that??
+ Step 1: Understand How Kubernetes Knows AZs
+Cloud providers like AWS automatically label each node with the zone it's in:
+kubectl get nodes --show-labels | grep topology.kubernetes.io/zone
+You’ll see:
+ip-10-0-0-1   ...   topology.kubernetes.io/zone=us-east-1a
+ip-10-0-1-1   ...   topology.kubernetes.io/zone=us-east-1b
+ip-10-0-2-1   ...   topology.kubernetes.io/zone=us-east-1c
+
+✅ Good News: You don't need to label manually in EKS — it’s automatic!
+
+🥈 Step 2: Apply Deployment YAML with topologySpreadConstraints
+Here’s the YAML to create a Deployment with 3 replicas, one in each AZ:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: web-app
+      containers:
+        - name: nginx
+          image: nginx
+topologySpreadConstraints:- Spread rules for pod placement
+maxSkew: 1:- No zone can have more than 1 extra pod compared to others
+topologyKey: topology.kubernetes.io/zone: Spread based on AZs
+whenUnsatisfiable: DoNotSchedule: Don’t place pods if they violate spread
+
+"To ensure high availability and zone-level redundancy, I used Kubernetes topologySpreadConstraints in my Deployment. 
+This ensures the pods are evenly distributed across availability zones based on the node’s topology.kubernetes.io/zone label. 
+I used maxSkew: 1 to enforce balance and DoNotSchedule to avoid overloading a zone. 
+This gives automatic, clean, and production-grade zone balancing."
