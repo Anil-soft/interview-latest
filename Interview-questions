@@ -516,3 +516,45 @@ whenUnsatisfiable: DoNotSchedule: Don’t place pods if they violate spread
 This ensures the pods are evenly distributed across availability zones based on the node’s topology.kubernetes.io/zone label. 
 I used maxSkew: 1 to enforce balance and DoNotSchedule to avoid overloading a zone. 
 This gives automatic, clean, and production-grade zone balancing."
+
+12. what are the difference between spot, on demand and dedicated instances??
+✅ 1. On-Demand Instances
+🔹 What it is:
+You launch an EC2 instance when you need it and pay per hour or per second. There is no long-term commitment.
+
+🔹 Real-Time Example:
+You are building a web application for a client and you're testing different versions of it. 
+You don’t know how long you'll need the server, maybe only a few days or weeks.
+After 3 days, you complete the testing and terminate the instance. You only pay for those 3 days.
+
+✅ 2. Reserved Instances (RIs)
+🔹 What it is:
+You commit to using an instance type in a specific region for 1 or 3 years in exchange for up to 75% discount 
+compared to On-Demand.
+
+🔹 Real-Time Example:
+Your company has a production database server (t3.large) that must run 24/7 for 3 years.
+You know it will be used continuously. So, you buy a Reserved Instance for t3.large in us-east-1.
+This way, you save around 60-75% on the cost.
+
+✅ 4. Dedicated Instances
+🔹 What it is:
+You get EC2 instances running on physical hardware that is fully dedicated to your AWS account.
+Unlike normal EC2s which share hardware with other customers (multi-tenancy), this is single-tenant.
+
+🔹 Real-Time Example:
+You are working on a banking app that requires strict compliance and hardware isolation 
+(for example, you must not share a physical server with another customer).
+
+✅ What is a Spot Instance?
+A Spot Instance is an EC2 virtual machine that uses unused EC2 capacity in AWS.
+It’s very cheap — up to 90% less cost than On-Demand instances.
+BUT… AWS can take it away anytime with a 2-minute warning ⚠️ if it needs that capacity back.
+
+✅ Real-Life Example:
+Let’s say your company is training a Machine Learning model that takes 4 hours.
+This is a non-urgent task, and if it stops and resumes again later — it’s still fine.
+So instead of using a normal On-Demand EC2 and spending ₹500, you launch a Spot Instance for the same type — and spend only ₹50
+But remember:
+If AWS needs that EC2 capacity, your instance is terminated suddenly.
+So you must build your script to save progress every 15 minutes (like saving a game).
