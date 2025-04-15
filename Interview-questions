@@ -558,3 +558,23 @@ So instead of using a normal On-Demand EC2 and spending ₹500, you launch a Spo
 But remember:
 If AWS needs that EC2 capacity, your instance is terminated suddenly.
 So you must build your script to save progress every 15 minutes (like saving a game).
+
+what is placement groups in AWS?
+✅ Cluster
+🔹Packs instances close together inside an Availability Zone. This strategy enables workloads to achieve 
+  the low-latency network performance necessary for tightly-coupled node-to-node communication that is typical of
+  high-performance computing (HPC) applications.
+  You can launch multiple instance types into a cluster placement group.
+
+✅ Partition 
+🔹Spreads your instances across logical partitions such that groups of instances in one partition do not share 
+  the underlying hardware with groups of instances in different partitions. This strategy is typically used by large 
+  distributed and replicated workloads, such as Hadoop, Cassandra, and Kafka.
+  A partition placement group supports a maximum of seven partitions per Availability Zone.
+  The number of instances that you can launch in a partition placement group is limited only by your account limits.
+
+✅ Spread 
+🔹Strictly places a small group of instances across distinct underlying hardware to reduce correlated failures.
+  A rack spread placement group supports a maximum of seven running instances per Availability Zone.
+  For example, in a Region with three Availability Zones, you can run a total of 21 instances in the group, 
+  with seven instances in each Availability Zone.
