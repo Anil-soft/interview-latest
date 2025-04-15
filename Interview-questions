@@ -10,6 +10,7 @@
                 ↓
   [ JAR copied and application started on EC2 ]
 
+
 📂 Project Structure
 multi-region-deploy/
 ├── Jenkinsfile
