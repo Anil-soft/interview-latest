@@ -169,13 +169,13 @@ I clean up Docker artifacts, old build logs, and workspace data. If it's a frequ
 integrate alerts via CloudWatch or Prometheus, and scale Jenkins agents dynamically using auto-scaling groups or Kubernetes pods. 
 I also use cleanWs() and retry blocks in pipelines to make them more resilient.”
 
-3. if your Jenkins build failed with the resource constrains how can you debug that issue and how can you diagnose that?
+3. If you application load balancer getting an error like 502 code how would you monitor and troubleshoot the issue?
 ✅ Step-by-Step Troubleshooting Guide
 1. 🔍 Check ALB Target Health
 Go to EC2 > Load Balancers > Your ALB > Target Groups
 Check target health status:
 Is it healthy or unhealthy?
-Hover over the status to see why it's unhealthy.
+over the status to see why it's unhealthy.
 🔧 Common issues:
 Wrong port configured (e.g., your app runs on 8080 but ALB checks 80)
 App not responding to health checks
@@ -329,7 +329,8 @@ Bucket policy might allow access only from specific VPCs/VPC endpoint IDs.
    Declarative will be having Restart from stage and groovy doesn't have.
 
 9. what is connection draining in load balancers and how to do that?
-   Imagine you're deploying a new version of your application. If you terminate an instance immediately, active users connected to that instance will lose their session or get errors.
+   Imagine you're deploying a new version of your application. If you terminate an instance immediately, 
+   active users connected to that instance will lose their session or get errors.
    With Connection Draining:
    The instance stops receiving new requests.
    It continues to serve existing users until they complete or until a timeout is reached.
