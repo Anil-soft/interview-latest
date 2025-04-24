@@ -652,3 +652,222 @@ So, a trace helps you visualize:
 Total request duration
 Which service took the longest
 Where failure or latency occurred
+
+If there are multiple instructions are defined in Dockerfile which one is going to take execute??
+
+FROM centos:centos7
+CMD ["yum","-y","install","git"]
+ENTRYPOINT ["yum","-y","install","httpd"]
+ENTRYPOINT ["echo", "Hello World"]
+
+✅ 1. CMD ["yum","-y","install","git"]
+This sets the default command to run only if no command is provided during container run
+But CMD can be overridden by ENTRYPOINT
+And here, it's never used — because ENTRYPOINT will run instead
+
+⚠️ 2. ENTRYPOINT ["yum","-y","install","httpd"]
+This would have become the actual command executed when the container runs
+But…
+
+❌ 3. ENTRYPOINT ["echo", "Hello World"]
+This overwrites the previous ENTRYPOINT
+Docker only uses the last ENTRYPOINT defined — earlier ones are ignored
+So this becomes the final and effective command that runs when the container starts
+
+ENTRYPOINT ["echo"]
+CMD ["Hello World"]
+
+It will execute:
+echo Hello World
+✅ Because CMD acts as default arguments to ENTRYPOINT
+
+CMD ["yum","-y","install","git"]
+ENTRYPOINT ["echo", "Hello World"]
+
+ENTRYPOINT is already providing its own full command with arguments: echo Hello World
+So CMD is ignored entirely
+
+FROM centos:centos7
+ENTRYPOINT ["echo"]
+CMD ["Anil is a DevOps pro"]
+
+Output:
+Anil is a DevOps pro
+
+FROM alpine
+ENTRYPOINT ["echo", "First ENTRY"]
+ENTRYPOINT ["echo", "Second ENTRY"]
+
+🟢 Runs: echo Second ENTRY
+🛑 First ENTRYPOINT is ignored
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/entrypoint1.sh"]
+CMD ["/entrypoint2.sh"]
+
+❓ What Will Actually Execute?
+/entrypoint.sh /entrypoint2.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/entrypoint1.sh"]
+CMD ["/entrypoint2.sh"]
+ENTRYPOINT ["/entrypoint3.sh"]
+
+✅ Final Effective Dockerfile (after resolution):
+ENTRYPOINT ["/entrypoint3.sh"]
+CMD ["/entrypoint2.sh"]
+
+🧠 Tip for Mastery:
+Think of Docker like a "last-write-wins" config:
+ENTRYPOINT → Main executable
+CMD → Default argument(s) for ENTRYPOINT (only if no args passed during docker run)
+
+See I have few aws accounts if any user tries to spin up an instances with specific instance type that should be denied
+how can you do that?
+
+✅ Solution: Use AWS IAM Policies to Deny Specific EC2 Instance Types
+You can create an IAM policy that denies the RunInstances action if the instance type matches one or more specific types 
+(e.g., t3.2xlarge, g4dn.xlarge, etc.)
+
+🛡️ Example IAM Policy to Deny Specific Instance Types
+ {
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenySpecificEC2InstanceTypes",
+      "Effect": "Deny",
+      "Action": "ec2:RunInstances",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:InstanceType": [
+            "t3.2xlarge",
+            "g4dn.xlarge",
+            "r5.4xlarge"
+          ]
+        }
+      }
+    }
+  ]
+}
+
+If the user tries to launch one of the restricted instance types, the request is denied.
+
+💡 Pro Tip: Combine with Allow Policy
+Make sure you don’t override with an explicit Allow policy elsewhere.
+AWS always respects Deny first if both Allow and Deny are present.
+
+Use AWS SCP (Service Control Policy) for Org-wide Enforcement
+If you're using AWS Organizations, apply a Service Control Policy (SCP) at the OU (Organizational Unit) or account level to enforce 
+restrictions across accounts.
+
+🧠 Bonus: Condition by Tag or Region
+You can even restrict by:
+Region (aws:RequestedRegion)
+AMI ID (ec2:ImageId)
+Tags (to allow specific business units)
+
+🔐 Use AWS Organizations + Service Control Policies (SCPs)
+✅ What are SCPs?
+Service Control Policies are like "guardrails" for all IAM entities (users/roles) in an account.
+SCPs don't grant permissions — they set the maximum permissions.
+Applied at the Organization Root, OU, or account level.
+
+🛠️ Steps to Apply Least Privilege Policy Across All Accounts
+🔹 Step 1: Enable AWS Organizations (if not already)
+Sign in to your management/root account
+Go to AWS Organizations
+Create or manage an OU (Organizational Unit) with your AWS accounts
+
+accounts
+
+🔹 Step 2: Create an SCP with Least Privilege Rules
+Example: Deny everything except S3 read-only and EC2 Describe actions
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowS3ReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "s3:Get*",
+        "s3:List*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowEC2Describe",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyAllOthers",
+      "Effect": "Deny",
+      "Action": "*",
+      "Resource": "*"
+    }
+  ]
+}
+
+📌 This effectively creates a least privilege boundary for every IAM user or role — 
+    they cannot do anything outside of S3 read-only and EC2 describe.
+
+🔹 Step 3: Attach SCP to Root or OU
+Go to AWS Organizations > Policies > Service Control Policies
+Create and attach the policy to:
+The Root → affects all accounts
+A specific OU → affects only grouped accounts
+
+how the DNS resolution happen in AWS, suppose I have 100 instances and there is no load balancer so how the DNS resolution happen??
+
+is AWS lambda can connect with VPC if yes then why??
+But — like any compute — your Lambda still needs network access if it wants to:
+
+Talk to a database
+Hit an API
+Reach an S3 bucket
+Or call an external service
+So let’s explore what kind of network Lambda runs in.
+
+🌐 Where Does Lambda Run By Default?
+By default, Lambda runs in an AWS-managed VPC.
+This means:
+You don’t see or control the network
+Lambda is outside your own custom VPC
+Lambda has internet access by default (via NATs AWS manages)
+But it cannot access private resources inside your VPC
+
+📌 What does "AWS-managed VPC" mean?
+AWS creates and manages an internal, invisible VPC for running Lambda.
+This is great for public internet calls — like hitting:
+https://api.openai.com
+https://yourapp.com/send-email
+
+✅ But you cannot use it to:
+Connect to a private RDS DB
+SSH into a private EC2
+Access internal-only APIs in your VPC
+Because Lambda is outside your VPC, it has no route to those private subnets.
+
+✅ Why Would You Connect Lambda to Your VPC?
+If your Lambda function needs to access:
+🗄️ RDS DB	You deployed it in private subnet, no public IP
+🧠 ElastiCache / Redis	 Only accessible within the VPC
+💼 EC2 backend	 EC2s are private, need Lambda to talk to them
+🧪 Internal microservices (no internet endpoint)	Hosted in private subnets
+🛡️ Private APIs or Internal NLBs Require internal DNS/IP access
+
+🏗️ What Happens When You Attach Lambda to a VPC?
+Lambda attaches ENIs (Elastic Network Interfaces) to the subnets you specify
+These ENIs are how Lambda connects to your private network
+Your Lambda runs inside the private subnet, just like EC2 would
+
+🔒 But here’s the catch:
+Now Lambda loses internet access!
+Why? Because private subnets don’t have internet
+So, if your Lambda also needs to call https://api.example.com, you must add:
+A NAT Gateway
+Or route to a public subnet
