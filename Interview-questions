@@ -871,3 +871,15 @@ Why? Because private subnets don’t have internet
 So, if your Lambda also needs to call https://api.example.com, you must add:
 A NAT Gateway
 Or route to a public subnet
+
+what are the post build actions??
+📦 Archive Artifacts	
+   Save build outputs (e.g., .jar, .zip, .war) to Jenkins
+🔔 Send Notifications	
+   Send emails, Slack, Teams, etc. based on success/failure
+🔁 Trigger Downstream Jobs	
+   Start other pipelines or jobs after current one finishes
+📤 Deploy to Environment	
+   Push artifacts to test/stage/prod environment
+📄 Publish Test Reports	
+   Show JUnit/TestNG/Surefire reports on the CI dashboard
