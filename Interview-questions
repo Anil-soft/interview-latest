@@ -883,3 +883,37 @@ what are the post build actions??
    Push artifacts to test/stage/prod environment
 📄 Publish Test Reports	
    Show JUnit/TestNG/Surefire reports on the CI dashboard
+
+what is the difference between identity and resources based policies in IAM??
+1️⃣ Identity-Based Policy – Attached to a person/role
+✅ Think of it like this:
+"I am Anil, I should be allowed to create EC2 and upload files to S3."
+This policy is attached to you (the IAM user or role).
+🧑‍💻 Example:
+{
+  "Effect": "Allow",
+  "Action": "s3:PutObject",
+  "Resource": "arn:aws:s3:::my-bucket/*"
+}
+
+➡️ Means: The identity this is attached to (like you or your EC2 role) can upload objects into my-bucket.
+📦 Real-Life Example:
+You have an EC2 instance in Account A.
+You attach an IAM Role with identity-based policy allowing s3:GetObject.
+Now the EC2 can read files from S3 (if permission is granted).
+
+2️⃣ Resource-Based Policy – Attached to the resource
+✅ Think of it like this:
+"I am an S3 bucket, I want to allow Anil from Account B to download my files."
+This policy is attached directly to the AWS resource (like an S3 bucket, Lambda function, or SNS topic).
+🪣 Example (S3 Bucket Policy):
+{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::123456789012:user/Anil"
+  },
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::my-bucket/*"
+}
+
+➡️ Means: Anil from Account B can read files from my-bucket.
