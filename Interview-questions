@@ -917,3 +917,42 @@ This policy is attached directly to the AWS resource (like an S3 bucket, Lambda 
 }
 
 ➡️ Means: Anil from Account B can read files from my-bucket.
+
+If user is not able to access to your application, how can you start troubleshooting and what steps you follow??
+1️⃣ Check ALB DNS
+Ask the user:
+👉 “What URL or IP are you using?”
+Run:
+nslookup <your-ALB-DNS-name>
+✅ Ensure it resolves to correct IPs.
+
+2️⃣ Check Security Groups
+ALB's security group must allow inbound on port 80/443 from 0.0.0.0/0.
+EC2 instances must allow inbound from ALB security group on app port (e.g., 8080).
+
+3️⃣ Check Target Group Health
+Go to EC2 → Target Groups → Check Health Status
+If targets are unhealthy:
+❌ Wrong port in Target Group?
+❌ App not running?
+❌ Security Group blocks ALB?
+
+4️⃣ Check App on EC2
+SSH into the instance and verify:
+ps -ef | grep <your-app>
+curl http://localhost:<app-port>
+✅ App must be running and responding locally.
+
+5️⃣ Check Listener Rules
+ALB Listener (HTTP/HTTPS) should forward to the correct target group.
+Check for path-based routing rules if any.
+
+6️⃣ Check NACLs & Route Tables
+Ensure subnets where ALB and EC2 are deployed have:
+Internet Gateway (for public access)
+Proper Route Table
+NACLs allowing traffic (stateless, so allow both inbound and outbound)
+
+7️⃣ Check Logs
+Enable ALB access logs in S3.
+Check EC2 logs: /var/log/ or app-specific logs for errors.
