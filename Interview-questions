@@ -956,3 +956,41 @@ NACLs allowing traffic (stateless, so allow both inbound and outbound)
 7️⃣ Check Logs
 Enable ALB access logs in S3.
 Check EC2 logs: /var/log/ or app-specific logs for errors.
+
+what is application monitoring and infrastructure monitoring??
+🔧 Infrastructure Monitoring – Detailed Explanation
+Infrastructure monitoring is the process of continuously observing and tracking the health, performance, and availability 
+of the core systems and hardware that support your applications.
+Virtual machines (EC2, GCE, Azure VMs), Physical servers, Kubernetes nodes, Containers (Docker, Podman).
+
+🔍 What does infrastructure monitoring capture?
+Let’s say your application is hosted on AWS EC2 inside a Kubernetes cluster.
+Infrastructure monitoring would track:
+CPU usage: Are your nodes overutilized or underutilized?
+Memory usage: Are any pods or servers about to run out of memory?
+Disk space: Are your volumes or partitions nearly full?
+Network bandwidth and latency: Is there any unusual traffic or network congestion?
+Node health: Is a node in the cluster failing or disconnected?
+Service availability: Are system services (like nginx, sshd, kubelet) up and running?
+
+📲 Application Monitoring – Detailed Explanation
+Application monitoring focuses on the internal behavior of your application code and how well it is serving users. 
+Even if your servers are healthy, your application might be failing due to code bugs, slow database queries, 
+or broken business logic.
+
+🔍 What does it capture?
+Let’s assume you’re running a microservices-based Java application for online banking.
+Application monitoring tools would track:
+API response times: How long does the /login or /transfer-money endpoint take?
+Error rates: Are users seeing more HTTP 500 or 400 errors?
+Exceptions and stack traces: Are any services crashing due to Java exceptions or Python errors?
+Slow database queries: Are any SQL queries taking too long to execute?
+User transactions: Can users complete critical flows like payments or registrations?
+
+suppose I have dir and in that dir I have created few files if I want to delete some files between some time range how can i
+do that??
+
+find /home/anil/logs/ -type f -newermt "2024-12-01" ! -newermt "2025-01-01" -exec ls -l {} \;
+
+
+
