@@ -992,5 +992,12 @@ do that??
 
 find /home/anil/logs/ -type f -newermt "2024-12-01" ! -newermt "2025-01-01" -exec ls -l {} \;
 
+Explain git branching strategy step by step??
 
-
+Each new feature is developed in a feature/* branch created from dev.
+Once tested, it’s merged into the dev branch and deployed to the dev environment.
+Before production, we either:
+   Directly merge dev into master (for simple projects), or
+   Create a release/* branch for final UAT testing.
+After UAT approval, the release branch is merged into master, which triggers production deployment via our CI/CD pipeline.
+Any critical production issue is handled via hotfix/* branches created from master.
