@@ -1001,3 +1001,28 @@ Before production, we either:
    Create a release/* branch for final UAT testing.
 After UAT approval, the release branch is merged into master, which triggers production deployment via our CI/CD pipeline.
 Any critical production issue is handled via hotfix/* branches created from master.
+
+what is AWS parameter group and how do you use in your project??
+   “In Amazon RDS, a parameter group acts like a configuration profile for the database engine. 
+    It contains engine-specific parameters similar to what we configure manually in a traditional DBMS—for example,
+    my.cnf in MySQL or postgresql.conf in PostgreSQL.
+
+Each RDS instance is associated with a parameter group that defines how the engine behaves. 
+Parameters can include things like:
+max_connections
+log_min_duration_statement
+autovacuum
+Memory/cache sizes
+
+There are two types of parameters:
+🔹 Dynamic – Changes apply immediately without restart.
+🔹 Static – Changes need a DB instance reboot to take effect.
+
+For example, in one of my projects, we had performance issues due to too many client connections. 
+I created a custom parameter group and increased the max_connections value. 
+
+✅ Scheduled a maintenance window: For production workloads, we scheduled the change during the maintenance window where a 
+    reboot could happen with minimal business impact.
+
+✅ Used Multi-AZ failover: If the instance was Multi-AZ, I applied the changes to the primary, triggered a manual failover,
+   so AWS promoted the standby with the new parameters, minimizing downtime to under a minute.
