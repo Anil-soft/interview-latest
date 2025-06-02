@@ -1026,3 +1026,21 @@ I created a custom parameter group and increased the max_connections value.
 
 ✅ Used Multi-AZ failover: If the instance was Multi-AZ, I applied the changes to the primary, triggered a manual failover,
    so AWS promoted the standby with the new parameters, minimizing downtime to under a minute.
+
+How prometheus will scrape the metrics from kubernetes cluster??
+🧠 Summary 
+In our Kubernetes setup, we use Prometheus to scrape metrics from nodes, pods, and services. 
+We deploy Prometheus using Helm (kube-prometheus-stack). Prometheus uses Kubernetes service discovery 
+to automatically find pods or services exposing metrics, based on specific annotations like prometheus.io/scrape: "true". 
+Every few seconds, Prometheus pulls the metrics from each discovered endpoint and stores them in its time-series DB. 
+These metrics are then visualized in Grafana or used for alerting. This approach is dynamic and doesn’t require hardcoding 
+IPs, which suits a dynamic orchestration platform like Kubernetes.
+
+  How can you implement the jenkins pipeline to deploy the application into multicluster??
+ “We have a CI/CD setup using a Jenkins multibranch pipeline. Our Git repo has three branches — dev, prod, and release — each
+  representing a different environment. Jenkins is configured to detect these branches and run separate pipelines 
+  based on the branch name. In the Jenkinsfile, we have conditional logic to use the correct Kubernetes cluster 
+  by loading a secure Kubeconfig file stored in Jenkins Credentials. Once the branch is detected, 
+  Jenkins checks out the code and deploys it to the respective cluster using kubectl or helm. We also have a GitHub webhook 
+  that triggers the Jenkins pipeline automatically when a commit is pushed. This ensures that deployments happen 
+  automatically and correctly for each environment without any manual intervention.”
