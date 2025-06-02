@@ -822,6 +822,19 @@ The Root → affects all accounts
 A specific OU → affects only grouped accounts
 
 how the DNS resolution happen in AWS, suppose I have 100 instances and there is no load balancer so how the DNS resolution happen??
+Option 1: Manually Use Private/Public IP or DNS
+You connect directly using:
+Private IP (if inside same VPC).
+Public IP / Public DNS (if from internet).
+But this is not scalable or fault-tolerant.
+
+Option 2: Use Route 53 for Custom DNS Resolution
+You create a Route 53 private hosted zone (if working within VPC).
+You create a CNAME or an A record with multiple values (multi-value routing) to map to those 100 EC2 instances.
+When a client queries DNS:
+Route 53 returns a random subset of IPs (based on health check or round-robin).
+The client connects directly to one of the IPs.
+This is your manual DNS-based load balancing.
 
 is AWS lambda can connect with VPC if yes then why??
 But — like any compute — your Lambda still needs network access if it wants to:
@@ -904,7 +917,7 @@ Now the EC2 can read files from S3 (if permission is granted).
 
 2️⃣ Resource-Based Policy – Attached to the resource
 ✅ Think of it like this:
-"I am an S3 bucket, I want to allow Anil from Account B to download my files."
+"I am S3 bucket, I want to allow Anil from Account B to download my files."
 This policy is attached directly to the AWS resource (like an S3 bucket, Lambda function, or SNS topic).
 🪣 Example (S3 Bucket Policy):
 {
