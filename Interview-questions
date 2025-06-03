@@ -1057,3 +1057,75 @@ IPs, which suits a dynamic orchestration platform like Kubernetes.
   Jenkins checks out the code and deploys it to the respective cluster using kubectl or helm. We also have a GitHub webhook 
   that triggers the Jenkins pipeline automatically when a commit is pushed. This ensures that deployments happen 
   automatically and correctly for each environment without any manual intervention.”
+
+what are the difference between ansible facts vs gather facts??
+Think of it Like This:
+🧠 Imagine you're a DevOps Engineer using Ansible to manage 100 servers.
+Before you run any task on a server, wouldn’t you want to know things like:
+What is the OS? How much RAM does it have? Which IP address is active? How many CPUs?
+
+Ansible automatically collects this info at the beginning using a tool called the setup module.
+
+✅ What are "Ansible Facts"?
+🧾 Definition (In Simple Words):
+Ansible Facts are just information (data) about your target servers (like hostname, IP, memory, OS, etc.) 
+collected by Ansible before it runs tasks.
+📦 Example of Some Facts:
+ansible_hostname: webserver-1
+ansible_os_family: RedHat
+ansible_default_ipv4.address: 192.168.1.15
+ansible_memory_mb.real.total: 8192
+
+You can use these facts as variables in your playbooks.
+
+✅ What is gather_facts?
+💡 In Simple Words:
+gather_facts is a yes/no switch at the beginning of your playbook.
+If you set: gather_facts: true  ✅
+Ansible will collect facts automatically using the setup module.
+If you set: gather_facts: false ❌
+Ansible will not collect any facts — unless you manually tell it to.
+
+💡 Real-World Example – Let's Build a Simple Playbook
+You want to install web servers:
+If the system is RedHat: Install httpd
+If the system is Ubuntu: Install apache2
+Here’s the playbook:
+- name: Install web server based on OS type
+  hosts: all
+  gather_facts: true  # 💡 This collects the facts automatically
+
+  tasks:
+    - name: Install on RedHat
+      yum:
+        name: httpd
+        state: present
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Install on Ubuntu
+      apt:
+        name: apache2
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+🔁 What happens here:
+You run the playbook.
+Ansible first gathers facts (because gather_facts: true).
+It learns what OS is running on each server.
+Based on the OS, it decides which web server to install.
+
+🤔 What If You Turn Off gather_facts?
+gather_facts: false
+Ansible won’t know anything about the target machine (no OS, no IP, no RAM). 
+So using any fact like ansible_os_family will cause an error ❌
+
+But you can still manually gather facts like this:
+- name: Collect only networking facts
+  setup:
+    filter: ansible_default_ipv4
+
+This gives you control and improves performance if you don’t need all the data.
+
+🔥 Real Interview Tip (What You Can Say)
+“Ansible facts are system information gathered by the setup module before executing tasks.
+ gather_facts is a flag in the playbook that decides whether Ansible should collect those factsautomatically. 
+ In large environments, we disable gather_facts for speed and manually collect only what we need, like IP addresses or memory stats.”
