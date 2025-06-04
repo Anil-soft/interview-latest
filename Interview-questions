@@ -10,7 +10,6 @@
                 ↓
   [ JAR copied and application started on EC2 ]
 
-
 📂 Project Structure
 multi-region-deploy/
 ├── Jenkinsfile
@@ -1127,5 +1126,221 @@ This gives you control and improves performance if you don’t need all the data
 
 🔥 Real Interview Tip (What You Can Say)
 “Ansible facts are system information gathered by the setup module before executing tasks.
- gather_facts is a flag in the playbook that decides whether Ansible should collect those factsautomatically. 
- In large environments, we disable gather_facts for speed and manually collect only what we need, like IP addresses or memory stats.”
+gather_facts is a flag in the playbook that decides whether Ansible should collect those factsautomatically. 
+In large environments, we disable gather_facts for speed and manually collect only what we need, like IP addresses or memory stats.”
+
+I have host file, lets consider almost 20 servers if I want to run my playbook on only one server how can I do that??
+
+ansible-playbook -i hosts playbook.yml --limit server1
+✅ --limit restricts the playbook execution to just server1.
+
+ansible-playbook -i hosts playbook.yml --limit 192.168.1.10
+
+Limit inside the playbook using hosts
+- name: Run on single host
+  hosts: server1   # or IP like 192.168.1.10
+  gather_facts: yes
+
+  tasks:
+    - name: Test reachability
+      ping:
+
+if I want to run particular task in ansible playbook how can I do that??
+
+- name: Example playbook
+  hosts: all
+  gather_facts: false
+  
+  tasks:
+    - name: install nginx
+      yum:
+        name: nginx
+        state: present
+      tags: install
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+      tags: start
+
+    - name: check nginx status
+      shell: systemctl status nginx
+      register: nginx_status
+      tags: check
+
+    - name: print nginx status
+      debug:
+        var: nginx_status.stdout
+      tags: debug
+
+ansible-playbook -i hosts site.yml --tags install
+ansible-playbook -i hosts site.yml --tags "install,start"
+
+register: This captures and stores the command output into a variable called nginx_status.
+
+🔍 Internally:
+When this command runs, the result looks something like this (inside nginx_status):
+nginx_status:
+  stdout: |
+    ● nginx.service - The nginx HTTP and reverse proxy server
+       Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled)
+       Active: active (running) since Tue 2025-05-27 10:15:27 UTC; 3h 20min ago
+       ...
+  stderr: ''
+  rc: 0
+
+✅ What it does:
+debug: This is used to print/debug output in the terminal.
+var: nginx_status.stdout tells Ansible to display only the standard output (stdout) of the nginx_status variable
+     (i.e., the actual result of systemctl status nginx).
+
+🧾 Sample Output in Console:
+TASK [print nginx status] ****************************************
+ok: [webserver1] => {
+    "nginx_status.stdout": "● nginx.service - The nginx HTTP and reverse proxy server\n   Loaded: loaded ... \n   Active: active (running) ..."
+}
+
+suppose I made some changes on ansible playbook and I ran and I need to see in the output that what exactly has changed
+and what is the current one I need to see??
+
+✅ By Default: Ansible Shows "Changed"
+When you run a playbook, Ansible will output lines like:
+
+TASK [Update Nginx config]
+changed: [webserver1]
+
+But this doesn't tell exactly what changed — just that something changed. To get deeper insight, let’s look at your options:
+
+🔍 1. Use --diff Option
+Run your playbook with:
+ansible-playbook site.yml --diff
+✅ What it does:
+Shows a line-by-line diff for files or templates that changed.
+Works well with modules like copy, template, lineinfile, etc.
+
+🧠 2. Set check_mode and diff: true for Preview (Dry Run)
+This will simulate the changes without applying them:
+ansible-playbook site.yml --check --diff
+Useful to:
+See what would change
+Validate before running in production
+
+How can I check the syntax check in ansible??
+ansible-playbook playbook.yml --syntax-check
+
+can you explain how can I run tasks parallelly and later how can I check whether the task is completed or not??
+🔹 1. How to Run Tasks in Parallel in Ansible
+Ansible runs tasks in parallel across multiple hosts by default using a feature called forks.
+
+✅ A. Control Parallelism with forks
+You can define the number of hosts to be handled in parallel by setting the forks value.
+
+🔧 In your ansible configuration file (ansible.cfg):
+ [defaults]
+forks = 20
+
+OR specify it when running the playbook:
+ansible-playbook site.yml -f 20
+
+🔸 This will run tasks on 20 hosts at the same time.
+
+🔹 2. What About Running Tasks in Parallel on a Single Host?
+You can use asynchronous tasks using async and poll.
+
+✅ B. Example: Run Tasks in Background (Async)
+- name: Run a long-running task in the background
+  shell: /usr/bin/long_script.sh
+  async: 300      # Maximum time the task is allowed to run (in seconds)
+  poll: 0         # Don't wait for the task to finish
+  register: background_task
+
+his starts the task and moves to the next one immediately.
+register stores the job ID.
+
+🔹 3. How to Check If Background Task Completed
+Use async_status to check its progress:
+- name: Check status of the background task
+  async_status:
+    jid: "{{ background_task.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 10
+  delay: 5
+This polls the job every 5 seconds, up to 10 times (50 seconds max).
+
+✅ 1. async_status:
+This is the Ansible module used to check the status of an asynchronous job.
+It queries whether a previously launched async task has completed.
+
+✅ 2. jid: "{{ background_task.ansible_job_id }}"
+jid = Job ID.
+When you run an asynchronous task (using async: 300, poll: 0), Ansible gives you a Job ID like 983462234.123.
+That job ID is stored in the registered variable: background_task.ansible_job_id.
+
+✅ 3. register: job_result
+This tells Ansible to store the output of async_status in a variable called job_result.
+
+This variable now holds details like:
+job_result.finished → whether the job is completed.
+job_result.rc → return code.
+job_result.stdout → output of the background command.
+
+✅ 4. until: job_result.finished
+This is a loop condition.
+Ansible will keep repeating this task until job_result.finished is true.
+
+suppose if ansible playbook fails to run 20% of servers the ansible playbook should abort it, how can I do that??
+✅ Solution: Use --forks + max_fail_percentage + serial
+🛠 Ansible provides the max_fail_percentage setting for this:
+🔧 Example Playbook Snippet:
+- name: Example play
+  hosts: all
+  serial: 100%  # Run on all hosts in each batch
+  max_fail_percentage: 20
+  tasks:
+    - name: Simulate task
+      shell: "echo Hello from {{ inventory_hostname }}"
+
+📌 What This Means:
+serial: 100%: Run on all hosts at once (you can batch if needed).
+max_fail_percentage: 20: If more than 20% of the hosts fail, Ansible aborts the playbook immediately.
+
+what is ansible pull and why do we use this??
+🔁 What is ansible-pull?
+Normally, Ansible works in push mode, where you run ansible-playbook from a control node to connect and execute tasks on target nodes via SSH.
+
+🔄 ansible-pull reverses this model.
+It runs on the target node itself, pulls a playbook from a Git repo, and executes it locally.
+
+📦 Use Case:
+Imagine you have 100 EC2 instances and you don’t want to manage a central control node.
+Instead, each instance runs a cron job or systemd timer that runs ansible-pull periodically.
+The instance will pull the latest configuration from Git and apply it to itself.
+
+ansible-pull -U https://github.com/anil-devops/infrastructure-config.git site.yml
+
+write an ansible playbook which can create the user and assign to group??
+
+---
+- name: create user and assign to group
+  hosts: all
+  become: yes
+  vars:
+    username: "anil"
+    groupname: "devops"
+
+  tasks:
+    - name: Ensure the group exists
+      ansible.builtin.group:
+        - name: "{{ username }}"
+          state: present
+
+    - name: create and assign user to group
+      ansible.builtin.user:
+        - name: "{{ username }}"
+          group: "{{ groupname }}"
+          state: present
+
+if I want to delete the remote branch through git command line how can I do that??
+git push origin --delete feature/test
