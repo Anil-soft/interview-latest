@@ -1344,3 +1344,45 @@ write an ansible playbook which can create the user and assign to group??
 
 if I want to delete the remote branch through git command line how can I do that??
 git push origin --delete feature/test
+
+what are the lambda layers?
+Lambda Layers are a way to separate common code or dependencies from your Lambda function code and reuse them across 
+multiple functions.
+
+🔍 Why Do We Need Layers?
+Imagine this:
+You have 10 Lambda functions using the same Python package (e.g., requests, boto3, pandas).
+Instead of packaging the same dependency again and again inside each Lambda zip, you can put it into a Layer.
+This makes your Lambda packages lighter, modular, and easier to maintain.
+
+📦 Real-Time Use Case
+Imagine you're using Python in Lambda and you need:
+requests for API calls
+pandas for CSV processing
+
+You create a Lambda Layer with these packages and attach the layer to all Lambda functions needing them.
+
+what are the triggers in lambda function??
+🔁 So What Are Triggers in Lambda?
+Triggers are AWS services or events that automatically invoke a Lambda function.
+Common triggers include:
+API Gateway (for REST APIs), S3 (e.g., on file upload), DynamoDB Streams, CloudWatch Events / Schedules, SNS / SQS, 
+EventBridge, Step Functions.
+
+what is the difference between sudo su - and sudo - i commands?
+The command **sudo su -** means:
+"Use sudo to run the su - command."
+The su command = "substitute user" or "switch user".
+
+sudo su -
+"Ask sudo to let me run the su - command (which then switches me to the root user)."
+This relies on the su binary existing and being accessible.
+❗ Problem:
+If su is disabled or restricted (common in security-hardened systems), then:
+sudo su - might fail.
+Also, su may have its own authentication rules, making things more complex.
+
+✅ Why sudo -i is better:
+   This is a native capability of the sudo command.
+   It does not call or depend on su.
+   It directly runs a root shell, loading the root environment.
