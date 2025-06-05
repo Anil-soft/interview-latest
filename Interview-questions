@@ -1421,3 +1421,78 @@ DevOps overhead: Requires CI/CD, service discovery, containerization (e.g., Dock
 Testing is harder: Need integration testing across multiple services.
 Network dependency: Inter-service communication can cause latency and failure points.
 
+what is symlink and why do we use that??
+A symbolic link is a file that contains a path to another file or directory. When you access the symlink, 
+you're redirected to the actual target file or folder.
+ln -s /path/to/original /path/to/symlink
+
+what are the ways to deploy in Kubernetes cluster?
+Imperative Commands, Declarative YAML Manifests, Helm Charts (Templated YAML), GitOps Tools (ArgoCD, Flux), 
+Operators & Custom Controllers
+
+how can you detect the anomaly detection in cloudwatch?
+CloudWatch Anomaly Detection uses machine learning to automatically create a "normal" baseline for a metric and detect outliers 
+(anomalies).
+✅ How It Works
+You pick a metric in CloudWatch (e.g., CPUUtilization)
+CloudWatch applies ML models to historical data to understand normal behavior
+It draws a confidence band (e.g., 95%) around the expected value
+You create an alarm that triggers when the metric breaches the band
+
+✅ Real-Time Use Case: Web Application on EC2
+Scenario:
+You have a web app running on EC2. Normally, CPU stays around 30-50% during the day but drops to 10-15% at night.
+You want to get alerted if CPU suddenly spikes or drops unusually (even if still below 80%).
+
+✅ Step-by-Step: Create Anomaly Detection in CloudWatch
+CloudWatch → Metrics → EC2 → CPUUtilization
+Click “Graphed metrics”
+Check the box next to your metric
+Click on the "⚙️ anomaly detection" icon (or right-click → "Add anomaly detection band")
+Choose the confidence level (default: 95%)
+🔹 This draws a shaded region (the band). If the metric leaves this band, it's considered an anomaly.
+
+what are the encryption types are available if I want to do server side encryption in S3 bucket??
+✅ 1. SSE-S3 (AES-256)
+Encryption: AES-256
+Key: Managed by S3
+No need to do anything — just enable encryption on the bucket or object.
+✅ Use Case: Simple encryption needs, minimal config
+❌ No audit logs or control over keys
+
+✅ 2. SSE-KMS (KMS Key - AWS or Customer Managed)
+Encryption: AWS Key Management Service (KMS)
+Key: Managed by AWS KMS (default or custom key)
+You can use:
+AWS-managed KMS key (default)
+Customer-managed KMS key (CMK) (more control)
+✅ Use Case:
+Need audit logging (CloudTrail)
+Per-object permissions using key policies
+Key rotation enabled
+
+✅ 3. SSE-C (Customer-Provided Keys)
+Encryption: Your key (S3 uses it temporarily)
+You must supply the key during both upload and download
+AWS does not store your key
+
+suppose I have 2 applications 1 is in one namespace and another one is in another namespace how can I ping from one to another??
+✅ By Default: Yes, Cross-Namespace Communication Is Allowed
+Kubernetes allows cross-namespace pod-to-pod communication by default as long as:
+Network policies do not block traffic
+DNS is used properly
+✅ How to Ping (or cURL) Across Namespaces
+You just need to use fully qualified domain name (FQDN) of the service.
+
+📌 Syntax:
+<service-name>.<namespace>.svc.cluster.local
+
+I have 100GB EBS volume which is attached to EC2 instance now the size is 90% what can I do now and how can I increase the size??
+In AWS, when an EBS volume attached to an EC2 instance is running out of space, I first increase the volume size via the AWS console
+or CLI, which can be done live without detaching the volume. Then, inside the EC2 instance, I rescan the device so the OS recognizes
+the new size, use pvresize to extend the LVM physical volume, followed by lvextend to expand the logical volume, and finally resize 
+the filesystem with xfs_growfs or resize2fs depending on the filesystem type. This process allows seamless, 
+non-disruptive storage expansion, ensuring applications continue running without downtime while gaining additional storage capacity.
+
+how the SSL works and what is the difference between SSL and TLS?
+
